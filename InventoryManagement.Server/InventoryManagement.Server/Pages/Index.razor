@@ -1,0 +1,109 @@
+﻿@page "/"
+
+@inject IDbContextFactory<InventoryDbContext> ContextFactory
+
+<PageTitle>Home</PageTitle>
+
+<h1>Home</h1>
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (loadError is not null)
+{
+    <p class="text-danger">@loadError</p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Inventory Items</h5>
+                    <p class="card-text">@totalInventoryItems</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Inventory Quantity</h5>
+                    <p class="card-text">@totalInventoryQuantity</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Inventory Value</h5>
+                    <p class="card-text">@totalInventoryValue.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        @foreach (var category in categoryValues)
+        {
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@category.CategoryName</h5>
+                        <p class="card-text">Total Value: @category.TotalValue.ToString("C")</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private int totalInventoryItems;
+    private int totalInventoryQuantity;
+    private decimal totalInventoryValue;
+    private List<CategoryValue> categoryValues = new();
+    private bool isLoading = true;
+    private string? loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadInventoryDataAsync();
+        }
+        catch (Exception ex)
+        {
+            loadError = $"Error loading inventory data: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadInventoryDataAsync()
+    {
+        await using var context = ContextFactory.CreateDbContext();
+
+        // Total number of inventory items
+        totalInventoryItems = await context.Inventories.CountAsync();
+
+        // Total quantity of all inventory items
+        totalInventoryQuantity = await context.Inventories.SumAsync(i => i.Quantity);
+
+        // Total value of all inventory items
+        totalInventoryValue = await context.Inventories.SumAsync(i => i.Quantity * i.Price);
+
+        // Total value of inventory per category
+        categoryValues = await context.Categories
+            .Select(c => new CategoryValue
+                {
+                    CategoryName = c.Name,
+                    TotalValue = c.Inventories.Sum(i => i.Quantity * i.Price)
+                }).ToListAsync();
+    }
+
+    private class CategoryValue
+    {
+        public string CategoryName { get; set; }
+        public decimal TotalValue { get; set; }
+    }
+}

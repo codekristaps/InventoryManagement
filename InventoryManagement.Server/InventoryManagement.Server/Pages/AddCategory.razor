@@ -1,0 +1,68 @@
+﻿@page "/addcategory"
+
+@inject IDbContextFactory<InventoryDbContext> ContextFactory
+
+<PageTitle>Add Category</PageTitle>
+
+<h3>Add Category</h3>
+
+<EditForm Model="category" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="categoryName" class="form-label">Category Name</label>
+        <InputText id="categoryName" class="form-control" @bind-Value="category.Name" />
+        <ValidationMessage For="@(() => category.Name)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="categoryDescription" class="form-label">Category Description</label>
+        <InputTextArea id="categoryDescription" class="form-control" @bind-Value="category.Description" />
+        <ValidationMessage For="@(() => category.Description)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Category</button>
+</EditForm>
+
+@if (SuccessMessage is not null)
+{
+    <br />
+    <div class="alert alert-success">@SuccessMessage</div>
+}
+
+@if (ErrorMessage is not null)
+{
+    <br />
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+@code {
+    private Category category = new();
+
+    private string? SuccessMessage { get; set; }
+    private string? ErrorMessage { get; set; }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            await using var context = ContextFactory.CreateDbContext();
+
+            context.Categories.Add(category);
+            await context.SaveChangesAsync();
+            category = new Category();
+            // Optionally, navigate to another page or display a success message
+            // For example:
+            // NavigationManager.NavigateTo("/categories");
+
+            SuccessMessage = $"Category {category.Name} was added successfully";
+            ErrorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = null;
+            ErrorMessage = $"Error while adding a category: {ex.Message}";
+        }
+    }
+}

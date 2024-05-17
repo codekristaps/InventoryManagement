@@ -1,0 +1,80 @@
+﻿@page "/categories"
+
+@inject IDbContextFactory<InventoryDbContext> ContextFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Categories Overview</PageTitle>
+
+<h1>Categories Overview</h1>
+
+<button class="btn btn-primary mb-3" @onclick="NavigateToAddCategory">Add Category</button>
+
+@if (categories == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (categories.Count == 0)
+{
+    <p>No categories available.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in categories)
+            {
+                <tr>
+                    <td>@category.Id</td>
+                    <td>@category.Name</td>
+                    <td>@category.Description</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeleteCategory(category.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Category> categories;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategoriesAsync();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        await using var context = ContextFactory.CreateDbContext();
+        categories = await context.Categories.ToListAsync();
+    }
+
+    private async Task DeleteCategory(int categoryId)
+    {
+        await using var context = ContextFactory.CreateDbContext();
+        var category = await context.Categories.FindAsync(categoryId);
+
+        if (category != null)
+        {
+            context.Categories.Remove(category);
+            await context.SaveChangesAsync();
+
+            // Refresh the category list
+            categories = await context.Categories.ToListAsync();
+        }
+    }
+
+    private void NavigateToAddCategory()
+    {
+        NavigationManager.NavigateTo("/addcategory");
+    }
+}

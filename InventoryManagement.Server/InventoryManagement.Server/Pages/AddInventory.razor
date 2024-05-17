@@ -1,0 +1,110 @@
+﻿@page "/addinventory"
+
+@inject IDbContextFactory<InventoryDbContext> ContextFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Add Inventory</PageTitle>
+
+<h3>Add Inventory</h3>
+
+<EditForm Model="inventory" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="inventoryName" class="form-label">Inventory Name</label>
+        <InputText id="inventoryName" class="form-control" @bind-Value="inventory.Name" />
+        <ValidationMessage For="@(() => inventory.Name)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="inventoryDescription" class="form-label">Inventory Description</label>
+        <InputTextArea id="inventoryDescription" class="form-control" @bind-Value="inventory.Description" />
+        <ValidationMessage For="@(() => inventory.Description)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="inventoryQuantity" class="form-label">Quantity</label>
+        <InputNumber id="inventoryQuantity" class="form-control" @bind-Value="inventory.Quantity" />
+        <ValidationMessage For="@(() => inventory.Quantity)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="inventoryPrice" class="form-label">Price</label>
+        <InputNumber id="inventoryPrice" class="form-control" @bind-Value="inventory.Price" />
+        <ValidationMessage For="@(() => inventory.Price)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="categoryId" class="form-label">Category</label>
+        <InputSelect id="categoryId" class="form-control" @bind-Value="inventory.CategoryId">
+            <option value="">Select a Category</option>
+            @foreach (var category in categories)
+            {
+                <option value="@category.Id">@category.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => inventory.CategoryId)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Inventory</button>
+</EditForm>
+
+@if (SuccessMessage is not null)
+{
+    <br />
+    <div class="alert alert-success">@SuccessMessage</div>
+}
+
+@if (ErrorMessage is not null)
+{
+    <br />
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+@code {
+    private Inventory inventory = new();
+    private List<Category> categories = new();
+
+    private string? SuccessMessage { get; set; }
+    private string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategoriesAsync();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        try
+        {
+            await using var context = ContextFactory.CreateDbContext();
+            categories = await context.Categories.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error while loading categories: {ex.Message}";
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            await using var context = ContextFactory.CreateDbContext();
+
+            context.Inventories.Add(inventory);
+            await context.SaveChangesAsync();
+
+            SuccessMessage = $"Inventory {inventory.Name} was added successfully";
+            ErrorMessage = null;
+
+            inventory = new Inventory(); // Clear the form
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error while adding inventory: {ex.Message}";
+            SuccessMessage = null;
+        }
+    }
+}

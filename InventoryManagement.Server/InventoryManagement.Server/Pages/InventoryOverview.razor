@@ -1,0 +1,86 @@
+﻿@page "/inventory"
+
+@inject IDbContextFactory<InventoryDbContext> ContextFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Inventory Overview</PageTitle>
+
+<h1>Inventory Overview</h1>
+
+<button class="btn btn-primary mb-3" @onclick="NavigateToAddInventory">Add Inventory</button>
+
+@if (inventories == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (inventories.Count == 0)
+{
+    <p>No inventory items available.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var inventory in inventories)
+            {
+                <tr>
+                    <td>@inventory.Id</td>
+                    <td>@inventory.Name</td>
+                    <td>@inventory.Description</td>
+                    <td>@inventory.Quantity</td>
+                    <td>@inventory.Price</td>
+                    <td>@inventory.Category?.Name</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeleteInventory(inventory.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Inventory> inventories;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInventoriesAsync();
+    }
+
+    private async Task LoadInventoriesAsync()
+    {
+        await using var context = ContextFactory.CreateDbContext();
+        inventories = await context.Inventories.Include(i => i.Category).ToListAsync();
+    }
+
+    private async Task DeleteInventory(int inventoryId)
+    {
+        await using var context = ContextFactory.CreateDbContext();
+        var inventory = await context.Inventories.FindAsync(inventoryId);
+
+        if (inventory != null)
+        {
+            context.Inventories.Remove(inventory);
+            await context.SaveChangesAsync();
+
+            // Refresh the inventory list
+            inventories = await context.Inventories.Include(i => i.Category).ToListAsync();
+        }
+    }
+
+    private void NavigateToAddInventory()
+    {
+        NavigationManager.NavigateTo("/addinventory");
+    }
+}
