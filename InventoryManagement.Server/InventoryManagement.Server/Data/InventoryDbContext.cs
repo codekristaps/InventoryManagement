@@ -35,7 +35,7 @@ public class InventoryDbContext : DbContext
                   .IsRequired();
             entity.Property(i => i.Price)
                   .IsRequired()
-                  .HasPrecision(18, 2); // Use HasPrecision for EF Core 5.0 and above
+                  .HasPrecision(18, 2);
             entity.HasOne(i => i.Category)
                   .WithMany(c => c.Inventories)
                   .HasForeignKey(i => i.CategoryId)
