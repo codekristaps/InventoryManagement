@@ -52,9 +52,6 @@
             context.Categories.Add(category);
             await context.SaveChangesAsync();
             category = new Category();
-            // Optionally, navigate to another page or display a success message
-            // For example:
-            // NavigationManager.NavigateTo("/categories");
 
             SuccessMessage = $"Category {category.Name} was added successfully";
             ErrorMessage = null;
