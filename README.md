@@ -1,6 +1,6 @@
 # InventoryManagement
 
- Another side project which is an inventory management system built using C# and Blazor.
+ Another side project which is an inventory management system built using C# and Blazor. Will update from time to time.
 
 # Home page
 
